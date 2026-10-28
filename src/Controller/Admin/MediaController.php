@@ -37,7 +37,9 @@ class MediaController extends AbstractController
             25,
             25 * ($page - 1)
         );
-        $total = $this->doctrine->getRepository(Media::class)->count([]);
+        // Je compte uniquement les médias correspondant aux critères de recherche
+        // Un admin compte tous les médias, un invité uniquement les siens
+        $total = $this->doctrine->getRepository(Media::class)->count($criteria);
 
         return $this->render('admin/media/index.html.twig', [
             'medias' => $medias,
@@ -71,15 +73,61 @@ class MediaController extends AbstractController
     }
 
     /**
-     * @Route("/admin/media/delete/{id}", name="admin_media_delete")
+     * @Route("/admin/media/delete/{id}", name="admin_media_delete", methods={"POST"})
      */
-    public function delete(int $id)
+
+    public function delete(int $id, Request $request)
     {
+        // Je vérifie que l'utilisateur est connecté
+        $user = $this->getUser();
+
+        if (!$user) {
+            throw $this->createAccessDeniedException('Vous devez être connecté.');
+        }
+
+        // Je recherche la photo à supprimer
         $media = $this->doctrine->getRepository(Media::class)->find($id);
+
+        if (!$media) {
+            throw $this->createNotFoundException('Photographie introuvable.');
+        }
+
+        // Je vérifie que l'utilisateur est admin ou propriétaire de la photo
+        if (!$this->isGranted('ROLE_ADMIN') && $media->getUser()?->getId() !== $user->getId()) {
+            throw $this->createAccessDeniedException(
+                'Vous ne pouvez pas supprimer cette photographie.'
+            );
+        }
+
+        // Je vérifie le jeton de sécurité du formulaire
+        if (!$this->isCsrfTokenValid(
+            'delete_media_' . $media->getId(),
+            $request->request->get('_token')
+        )) {
+            throw $this->createAccessDeniedException('Jeton de sécurité invalide.');
+        }
+
+        // Je conserve le chemin de la photo avant sa suppression
+        $path = $media->getPath();
+
+        // Je supprime la photographie de PostgreSQL.
         $this->doctrine->getManager()->remove($media);
         $this->doctrine->getManager()->flush();
-        unlink($media->getPath());
 
+        // Je vérifie que le chemin correspond à un fichier du dossier uploads
+        $filename = basename($path);
+
+        if ($path === 'uploads/' . $filename) {
+            $filePath = $this->getParameter('kernel.project_dir')
+                . '/public/uploads/' . $filename;
+
+            // Je supprime le fichier physique uniquement s'il existe
+            if (is_file($filePath)) {
+                unlink($filePath);
+            }
+        }
+
+        // Je retourne à la liste des photos
         return $this->redirectToRoute('admin_media_index');
     }
 }

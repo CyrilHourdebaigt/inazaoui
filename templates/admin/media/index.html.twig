@@ -20,15 +20,32 @@
         <tbody>
             {% for media in medias %}
                 <tr>
-                    <td><img src="{{ asset(media.path) }}" width="75" /></td>
+                    <td><img src="{{ asset(media.path) }}" width="75"/></td>
                     <td>{{ media.title }}</td>
                     {% if is_granted('ROLE_ADMIN') %}
                         <td>{{ media.user.name }}</td>
                         <td>{{ media.album.name ?? '' }}</td>
                     {% endif %}
+                    
                     <td>
-                        <a href="{{ path('admin_media_delete', {id: media.id}) }}" class="btn btn-danger">Supprimer</a>
+                        {# Je demande confirmation avant de supprimer une photo #}
+                        <form
+                            method="post"
+                            action="{{ path('admin_media_delete', {id: media.id}) }}"
+                            onsubmit="return confirm('Voulez-vous vraiment supprimer cette photographie ? Cette action est irréversible.');">
+
+                            {# Je protège mon formulaire contre les requêtes non autorisées #}
+                            <input
+                                type="hidden"
+                                name="_token"
+                                value="{{ csrf_token('delete_media_' ~ media.id) }}">
+
+                            <button type="submit" class="btn btn-danger">
+                                Supprimer
+                            </button>
+                        </form>
                     </td>
+
                 </tr>
             {% endfor %}
         </tbody>

@@ -1,0 +1,85 @@
+{% extends 'admin.html.twig' %}
+
+{% block admin %}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Gestion des invités</h1>
+
+        <a href="{{ path('admin_guest_add') }}" class="btn btn-primary">
+            Ajouter un invité
+        </a>
+    </div>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Nom</th>
+                <th>Adresse e-mail</th>
+                <th>Statut</th>
+                <th class="text-end">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for guest in guests %}
+                <tr>
+                    <td>{{ guest.name }}</td>
+                    <td>{{ guest.email }}</td>
+
+                    <td>
+                        {% if guest.active %}
+                            Actif
+                        {% else %}
+                            Bloqué
+                        {% endif %}
+                    </td>
+
+                    
+                    <td>
+                        <div class="d-flex justify-content-end align-items-center gap-2">
+
+                            {# Je permets de bloquer ou de réactiver un invité #}
+                            <form
+                                method="post"
+                                action="{{ path('admin_guest_toggle', {id: guest.id}) }}"
+                                class="m-0">
+                                <input
+                                    type="hidden"
+                                    name="_token"
+                                    value="{{ csrf_token('toggle_guest_' ~ guest.id) }}">
+                                {% if guest.active %}
+                                    <button type="submit" class="btn btn-warning">
+                                        Bloquer
+                                    </button>
+                                {% else %}
+                                    <button type="submit" class="btn btn-success">
+                                        Réactiver
+                                    </button>
+                                {% endif %}
+                            </form>
+
+                            {# Je demande confirmation avant de supprimer un invité #}
+                            <form
+                                method="post"
+                                action="{{ path('admin_guest_delete', {id: guest.id}) }}"
+                                class="m-0"
+                                onsubmit="return confirm('Voulez-vous vraiment supprimer cet invité et toutes ses photographies ? Cette action est irréversible.');">
+                                <input
+                                    type="hidden"
+                                    name="_token"
+                                    value="{{ csrf_token('delete_guest_' ~ guest.id) }}">
+                                <button type="submit" class="btn btn-danger">
+                                    <i class="bi bi-trash"></i> Supprimer
+                                </button>
+                            </form>
+
+                        </div>
+                    </td>
+
+                </tr>
+            {% else %}
+                <tr>
+                    <td colspan="4">Aucun invité enregistré.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

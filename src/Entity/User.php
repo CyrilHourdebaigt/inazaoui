@@ -8,10 +8,16 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+use Symfony\Component\Security\Core\User\EquatableInterface;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\Table(name: '`user`')]
-class User implements UserInterface, PasswordAuthenticatedUserInterface
+#[UniqueEntity(
+    fields: ['email'],
+    message: 'Cette adresse e-mail est déjà utilisée.'
+)]
+class User implements UserInterface, PasswordAuthenticatedUserInterface, EquatableInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -22,10 +28,13 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private bool $admin = false;
 
     #[ORM\Column]
+    private bool $active = true;
+
+    #[ORM\Column]
     private ?string $name;
 
     #[ORM\Column(type: 'text', nullable: true)]
-    private ?string $description;
+    private ?string $description = null;
 
     #[ORM\Column(length: 180, unique: true)]
     private ?string $email = null;
@@ -33,7 +42,12 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(nullable: true)]
     private ?string $password = null;
 
-    #[ORM\OneToMany(targetEntity: Media::class, mappedBy: 'user')]
+    // Je supprime également les médias associés lorsque je supprime un utilisateur.
+    #[ORM\OneToMany(
+        targetEntity: Media::class,
+        mappedBy: 'user',
+        cascade: ['remove']
+    )]
     private Collection $medias;
 
     public function __construct()
@@ -120,5 +134,30 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setAdmin(bool $admin): void
     {
         $this->admin = $admin;
+    }
+
+    public function isActive(): bool
+    {
+        return $this->active;
+    }
+
+    public function setActive(bool $active): void
+    {
+        $this->active = $active;
+    }
+
+    public function isEqualTo(UserInterface $user): bool
+    {
+        // Je vérifie que je compare bien deux utilisateurs de mon application.
+        if (!$user instanceof self) {
+            return false;
+        }
+
+        // Je vérifie que les informations importantes du compte n'ont pas changé.
+        return $this->getId() === $user->getId()
+            && $this->getUserIdentifier() === $user->getUserIdentifier()
+            && $this->getPassword() === $user->getPassword()
+            && $this->isAdmin() === $user->isAdmin()
+            && $this->isActive() === $user->isActive();
     }
 }

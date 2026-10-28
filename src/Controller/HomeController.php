@@ -31,7 +31,13 @@ class HomeController extends AbstractController
      */
     public function guests()
     {
-        $guests = $this->doctrine->getRepository(User::class)->findBy(['admin' => false]);
+        // Je récupère uniquement les invités dont le compte est actif
+        $guests = $this->doctrine->getRepository(User::class)->findBy([
+            'admin' => false,
+            'active' => true
+        ]);
+
+        // J'envoie les invités actifs à mon template
         return $this->render('front/guests.html.twig', [
             'guests' => $guests
         ]);
@@ -42,7 +48,19 @@ class HomeController extends AbstractController
      */
     public function guest(int $id)
     {
-        $guest = $this->doctrine->getRepository(User::class)->find($id);
+        // Je recherche uniquement un invité dont le compte est actif
+        $guest = $this->doctrine->getRepository(User::class)->findOneBy([
+            'id' => $id,
+            'admin' => false,
+            'active' => true
+        ]);
+
+        // Je retourne une erreur 404 si l'invité n'existe pas ou s'il est bloqué
+        if (!$guest) {
+            throw $this->createNotFoundException('Cet invité est introuvable ou son compte est désactivé.');
+        }
+
+        // J'affiche le profil de l'invité actif
         return $this->render('front/guest.html.twig', [
             'guest' => $guest
         ]);
@@ -57,8 +75,10 @@ class HomeController extends AbstractController
         $album = $id ? $this->doctrine->getRepository(Album::class)->find($id) : null;
         $user = $this->doctrine->getRepository(User::class)->findOneByAdmin(true);
 
+        // Si un album est sélectionné, je récupère uniquement les médias des utilisateurs actifs.
+        // Sinon, je conserve les photographies d'Ina comme auparavant.
         $medias = $album
-            ? $this->doctrine->getRepository(Media::class)->findByAlbum($album)
+            ? $this->doctrine->getRepository(Media::class)->findByActiveUsers($album)
             : $this->doctrine->getRepository(Media::class)->findByUser($user);
         return $this->render('front/portfolio.html.twig', [
             'albums' => $albums,
