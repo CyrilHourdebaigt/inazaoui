@@ -6,7 +6,7 @@ use App\Entity\Media;
 use App\Form\MediaType;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Routing\Attribute\Route;
 use Doctrine\Persistence\ManagerRegistry;
 
 class MediaController extends AbstractController
@@ -18,9 +18,7 @@ class MediaController extends AbstractController
         $this->doctrine = $doctrine;
     }
 
-    /**
-     * @Route("/admin/media", name="admin_media_index")
-     */
+    #[Route('/admin/media', name: 'admin_media_index')]
     public function index(Request $request)
     {
         $page = $request->query->getInt('page', 1);
@@ -48,9 +46,7 @@ class MediaController extends AbstractController
         ]);
     }
 
-    /**
-     * @Route("/admin/media/add", name="admin_media_add")
-     */
+    #[Route('/admin/media/add', name: 'admin_media_add')]
     public function add(Request $request)
     {
         $media = new Media();
@@ -61,8 +57,16 @@ class MediaController extends AbstractController
             if (!$this->isGranted('ROLE_ADMIN')) {
                 $media->setUser($this->getUser());
             }
-            $media->setPath('uploads/' . md5(uniqid()) . '.' . $media->getFile()->guessExtension());
-            $media->getFile()->move('uploads/', $media->getPath());
+
+            // Je génère un nom unique pour la photo
+            $filename = md5(uniqid()) . '.' . $media->getFile()->guessExtension();
+
+            // Je déplace la photo dans le dossier public/uploads
+            $media->getFile()->move($this->getParameter('kernel.project_dir') . '/public/uploads', $filename);
+
+            // Je conserve son chemin relatif dans la base de données
+            $media->setPath('uploads/' . $filename);
+
             $this->doctrine->getManager()->persist($media);
             $this->doctrine->getManager()->flush();
 
@@ -72,10 +76,7 @@ class MediaController extends AbstractController
         return $this->render('admin/media/add.html.twig', ['form' => $form->createView()]);
     }
 
-    /**
-     * @Route("/admin/media/delete/{id}", name="admin_media_delete", methods={"POST"})
-     */
-
+    #[Route('/admin/media/delete/{id}', name: 'admin_media_delete', methods: ['POST'])]
     public function delete(int $id, Request $request)
     {
         // Je vérifie que l'utilisateur est connecté

@@ -7,21 +7,39 @@
     </div>
     <table class="table">
         <thead>
-        <tr>
-            <th>Nom</th>
-            <th>Actions</th>
-        </tr>
+            <tr>
+                <th>Nom</th>
+                <th>Actions</th>
+            </tr>
         </thead>
         <tbody>
-        {% for album in albums %}
-            <tr>
-                <td>{{ album.name }}</td>
-                <td>
-                    <a href="{{ path('admin_album_update', {id: album.id}) }}" class="btn btn-warning">Modifier</a>
-                    <a href="{{ path('admin_album_delete', {id: album.id}) }}" class="btn btn-danger">Supprimer</a>
-                </td>
-            </tr>
-        {% endfor %}
+            {% for album in albums %}
+                <tr>
+                    <td>{{ album.name }}</td>
+                    <td>
+                        <a href="{{ path('admin_album_update', {id: album.id}) }}" class="btn btn-warning">Modifier</a>
+                    
+                        {# Je sécurise la suppression d'un album avec un formulaire POST #}
+                        <form
+                            method="post"
+                            action="{{ path('admin_album_delete', {id: album.id}) }}"
+                            class="d-inline"
+                            onsubmit="return confirm('Voulez-vous vraiment supprimer cet album ?');">
+
+                            {# Je transmets le jeton CSRF pour vérifier la demande #}
+                            <input
+                                type="hidden"
+                                name="_token"
+                                value="{{ csrf_token('delete_album_' ~ album.id) }}">
+
+                            <button type="submit" class="btn btn-danger">
+                                Supprimer
+                            </button>
+                        </form>
+
+                    </td>
+                </tr>
+            {% endfor %}
         </tbody>
     </table>
 {% endblock %}
