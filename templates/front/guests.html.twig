@@ -5,14 +5,13 @@
         <div class="col-12">
             <h3 class="mb-5">Invités</h3>
             <div class="guests d-flex flex-column">
-                {% for guest in guests %}
+                {% for item in guests %}
                     <div class="guest py-5 d-flex justify-content-between align-items-center">
-                        <h4>{{ guest.name }} ({{ guest.medias|length }})</h4>
-                        <a href="{{ path('guest', {id: guest.id}) }}">découvrir</a>
+                        <h4>{{ item.guest.name }} ({{ item.mediaCount }})</h4>
+                        <a href="{{ path('guest', {id: item.guest.id}) }}">découvrir</a>
                     </div>
                 {% endfor %}
             </div>
         </div>
     </div>
 {% endblock %}
-

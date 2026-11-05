@@ -8,6 +8,8 @@ use App\Entity\User;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Routing\Attribute\Route;
 use Doctrine\Persistence\ManagerRegistry;
+use App\Repository\MediaRepository;
+use App\Repository\UserRepository;
 
 class HomeController extends AbstractController
 {
@@ -27,17 +29,18 @@ class HomeController extends AbstractController
     #[Route('/guests', name: 'guests')]
     public function guests()
     {
-        // Je récupère uniquement les invités dont le compte est actif
-        $guests = $this->doctrine->getRepository(User::class)->findBy([
-            'admin' => false,
-            'active' => true
-        ]);
+    // Je récupère les invités actifs avec leur nombre de photos
+        /** @var UserRepository $userRepository */
+        $userRepository = $this->doctrine->getRepository(User::class);
 
-        // J'envoie les invités actifs à mon template
+        $guests = $userRepository->findActiveGuestsWithMediaCount();
+
+        // J'envoie les invités et leur nombre de photos à mon template
         return $this->render('front/guests.html.twig', [
             'guests' => $guests
         ]);
     }
+
 
     #[Route('/guest/{id}', name: 'guest')]
     public function guest(int $id)
@@ -65,13 +68,17 @@ class HomeController extends AbstractController
     {
         $albums = $this->doctrine->getRepository(Album::class)->findAll();
         $album = $id ? $this->doctrine->getRepository(Album::class)->find($id) : null;
-        $user = $this->doctrine->getRepository(User::class)->findOneByAdmin(true);
+        $user = $this->doctrine->getRepository(User::class)->findOneBy(['admin' => true]);
+ 
+        // Je récupère le repository des photographies
+        /** @var MediaRepository $mediaRepository */
+        $mediaRepository = $this->doctrine->getRepository(Media::class);
 
-        // Si un album est sélectionné, je récupère uniquement les médias des utilisateurs actifs.
-        // Sinon, je conserve les photographies d'Ina comme auparavant.
+        // Je récupère les photographies selon l'album sélectionné
         $medias = $album
-            ? $this->doctrine->getRepository(Media::class)->findByActiveUsers($album)
-            : $this->doctrine->getRepository(Media::class)->findByUser($user);
+            ? $mediaRepository->findByActiveUsers($album)
+            : $mediaRepository->findBy(['user' => $user]);
+
         return $this->render('front/portfolio.html.twig', [
             'albums' => $albums,
             'album' => $album,
