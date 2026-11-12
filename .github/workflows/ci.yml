@@ -34,5 +34,8 @@ jobs:
       - name: Préparer la base de test
         run: php bin/console doctrine:migrations:migrate --env=test --no-interaction
 
+      - name: Charger les données de test
+        run: php bin/console doctrine:fixtures:load --env=test --no-interaction
+
       - name: Exécuter les tests
         run: php vendor/bin/phpunit
