@@ -1,0 +1,38 @@
+name: Intégration continue
+
+on: [push, pull_request]
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: "postgresql://postgres:postgres@127.0.0.1:5432/ina_zaoui?serverVersion=17&charset=utf8"
+
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: ina_zaoui_test
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+
+      - name: Installer PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: pdo_pgsql, pgsql
+
+      - name: Installer les dépendances
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Préparer la base de test
+        run: php bin/console doctrine:migrations:migrate --env=test --no-interaction
+
+      - name: Exécuter les tests
+        run: php vendor/bin/phpunit
