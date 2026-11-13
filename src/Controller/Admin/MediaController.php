@@ -3,11 +3,13 @@
 namespace App\Controller\Admin;
 
 use App\Entity\Media;
+use App\Entity\User;
 use App\Form\MediaType;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
 use Doctrine\Persistence\ManagerRegistry;
+use App\Repository\MediaRepository;
 
 class MediaController extends AbstractController
 {
@@ -29,15 +31,21 @@ class MediaController extends AbstractController
             $criteria['user'] = $this->getUser();
         }
 
-        $medias = $this->doctrine->getRepository(Media::class)->findBy(
+        // Je récupère le repository des photos
+        /** @var MediaRepository $mediaRepository */
+        $mediaRepository = $this->doctrine->getRepository(Media::class);
+
+        // Je récupère les photos de la page actuelle
+        $medias = $mediaRepository->findBy(
             $criteria,
             ['id' => 'ASC'],
             25,
             25 * ($page - 1)
         );
+
         // Je compte uniquement les médias correspondant aux critères de recherche
         // Un admin compte tous les médias, un invité uniquement les siens
-        $total = $this->doctrine->getRepository(Media::class)->count($criteria);
+        $total = $mediaRepository->count($criteria);
 
         return $this->render('admin/media/index.html.twig', [
             'medias' => $medias,
@@ -79,7 +87,8 @@ class MediaController extends AbstractController
     #[Route('/admin/media/delete/{id}', name: 'admin_media_delete', methods: ['POST'])]
     public function delete(int $id, Request $request)
     {
-        // Je vérifie que l'utilisateur est connecté
+        // Je récupère l'utilisateur connecté
+        /** @var User|null $user */
         $user = $this->getUser();
 
         if (!$user) {
