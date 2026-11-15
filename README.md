@@ -59,19 +59,25 @@ Cette commande crée la base `ina_zaoui` à partir de la configuration du fichie
 
 ### Restaurer les données
 
-Le fichier `ina_zaoui_sauvegarde.sql`, fourni séparément, contient les tables, les utilisateurs, les albums et les informations sur les photographies.
+Le fichier ina_zaoui_sauvegarde.sql est fourni avec les livrables du projet, séparément du dépôt GitHub.
+Cette sauvegarde contient les tables, les utilisateurs, les albums et les informations sur les photographies.
 
-Placer ce fichier à la racine du projet, puis exécuter :
+Pour restaurer la base de données :
+
+  1. Récupérer le fichier ina_zaoui_sauvegarde.sql dans les livrables.
+  2. Copier ce fichier à la racine du projet, dans le même dossier que composer.json.
+  3. Ouvrir un terminal dans ce dossier.
+  4. Exécuter la commande suivante :
 
 ```bash
 psql -U postgres -d ina_zaoui -v ON_ERROR_STOP=1 -f ina_zaoui_sauvegarde.sql
 ```
 
-Cette commande importe les données dans PostgreSQL.
+Cette commande importe la sauvegarde dans PostgreSQL. Le mot de passe de l'utilisateur PostgreSQL peut être demandé.
 
-La commande `psql` doit être accessible depuis le terminal. Sous Windows, il peut être nécessaire d'indiquer son chemin complet.
+La commande psql doit être accessible depuis le terminal. Sous Windows, il peut être nécessaire d'indiquer le chemin complet du programme.
 
-**Important :** la base doit être vide avant l'importation. Il n'est pas nécessaire d'exécuter les migrations Doctrine après la restauration, car la sauvegarde contient déjà les tables et l'historique des migrations.
+Important : la base ina_zaoui doit être vide avant l'importation. Il n'est pas nécessaire d'exécuter les migrations Doctrine après la restauration, car la sauvegarde contient déjà les tables et l'historique des migrations.
 
 ### Restaurer les photographies
 
@@ -137,6 +143,12 @@ Préparer les tables :
 ```bash
 php bin/console doctrine:migrations:migrate --env=test
 ```
+
+Charger les données nécessaires aux tests (utilisateurs, album et photographies de démonstration) :
+```bash
+php bin/console doctrine:fixtures:load --env=test --no-interaction
+```
+Attention : cette commande remplace les données existantes dans la base de test. Elle ne doit pas être exécutée sur la base principale ina_zaoui.
 
 Il n'est pas nécessaire d'importer la sauvegarde SQL principale dans cette base.
 
