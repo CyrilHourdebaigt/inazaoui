@@ -220,4 +220,81 @@ class AlbumControllerTest extends WebTestCase
         // Je vérifie que l'album n'existe plus
         $this->assertNull($deletedAlbum);
     }
+
+
+    // Je vérifie qu'un admin peut supprimer un album sans supprimer ses photos
+    public function testAdminCanDeleteAlbumWithoutDeletingMedias(): void
+    {
+        // Je crée un navigateur pour simuler l'admin
+        $client = static::createClient();
+
+        // Je récupère Doctrine et l'admin dans ma base de test
+        $entityManager = static::getContainer()->get('doctrine')->getManager();
+
+        $admin = $entityManager
+            ->getRepository(User::class)
+            ->findOneBy(['email' => 'ina.test@example.fr']);
+
+        // Je vérifie que l'admin existe
+        $this->assertNotNull($admin);
+
+        // Je crée un album pour ce test
+        $album = new \App\Entity\Album();
+        $album->setName('Album avec photographie');
+
+        $entityManager->persist($album);
+
+        // Je crée une photo associée à cet album
+        $media = new \App\Entity\Media();
+        $media->setTitle('Photo à conserver');
+        $media->setPath('uploads/photo-a-conserver.jpg');
+        $media->setAlbum($album);
+
+        $entityManager->persist($media);
+        $entityManager->flush();
+
+        // Je conserve les identifiants avant la suppression
+        $albumId = $album->getId();
+        $mediaId = $media->getId();
+
+        // Je connecte l'admin
+        $client->loginUser($admin);
+
+        // Je visite la liste des albums
+        $crawler = $client->request('GET', '/admin/album');
+
+        // Je récupère le formulaire de suppression de mon album
+        $form = $crawler
+            ->filter('form[action="/admin/album/delete/' . $albumId . '"]')
+            ->form();
+
+        // J'envoie le formulaire avec son jeton CSRF
+        $client->submit($form);
+
+        // Je vérifie que l'application me redirige vers les albums
+        $this->assertResponseRedirects('/admin/album');
+
+        // Je récupère Doctrine après la suppression
+        $entityManager = static::getContainer()->get('doctrine')->getManager();
+
+        // Je vide les entités en mémoire pour relire les données en base
+        $entityManager->clear();
+
+        // Je vérifie que l'album a bien été supprimé
+        $deletedAlbum = $entityManager
+            ->getRepository(\App\Entity\Album::class)
+            ->find($albumId);
+
+        $this->assertNull($deletedAlbum);
+
+        // Je vérifie que la photo existe toujours
+        $savedMedia = $entityManager
+            ->getRepository(\App\Entity\Media::class)
+            ->find($mediaId);
+
+        $this->assertNotNull($savedMedia);
+
+        // Je vérifie que la photo n'est plus liée à un album
+        $this->assertNull($savedMedia->getAlbum());
+    }
 }

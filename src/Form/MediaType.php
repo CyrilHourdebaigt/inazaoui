@@ -12,6 +12,7 @@ use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Validator\Constraints\File;
+use Symfony\Component\Validator\Constraints\NotBlank;
 
 class MediaType extends AbstractType
 {
@@ -21,6 +22,9 @@ class MediaType extends AbstractType
             ->add('file', FileType::class, [
                 'label' => 'Image',
                 'constraints' => [
+                    new NotBlank([
+                        'message' => 'Veuillez sélectionner une image.',
+                    ]),
                     new File([
                         'maxSize' => '2M',
                         'mimeTypes' => [
