@@ -160,9 +160,33 @@ php vendor/bin/phpunit
 
 Le projet utilise également DAMA DoctrineTestBundle pour annuler les modifications effectuées dans la base pendant les tests.
 
-Lors de la dernière vérification, **36 tests et 134 assertions ont été validés**.
+Lors de la dernière vérification, 43 tests et 173 assertions ont été validés.
 
 Des avertissements de dépréciation peuvent apparaître sans empêcher les tests de réussir.
+
+### Rapport de couverture des tests
+
+Le rapport de couverture est disponible dans le dossier `reports/`.
+
+- Rapport HTML : `reports/test-coverage/index.html`
+- Rapport texte : `reports/coverage.txt`
+
+Pour consulter le rapport HTML, ouvrir le fichier
+`reports/test-coverage/index.html` dans un navigateur.
+
+Lors de la dernière vérification, la couverture des lignes de code était de 93,03 %.
+
+### Analyse statique avec PHPStan
+
+Le projet utilise PHPStan pour analyser le code PHP et détecter d'éventuelles erreurs sans exécuter l'application.
+
+Pour lancer l'analyse :
+
+```bash
+php vendor/bin/phpstan analyse src --level=2
+```
+
+Lors de la dernière vérification, PHPStan a analysé 17 fichiers sans détecter d'erreur.
 
 ## 6. Organisation du projet
 
